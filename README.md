@@ -1,5 +1,6 @@
 # PEPENoise
 Adds some additional noise-generation nodes to Unity Shader Graph, including 3D noise nodes.
+![изображение](https://github.com/user-attachments/assets/ca489e4d-c120-4b51-8ac2-80f5e8743410)
 
 
 ## List of nodes
