@@ -14,6 +14,9 @@
     "3D noise",
     "2D noise"
   ],
+  "author": {
+	  "name": "PEPengineers"
+  },
   "category": "Shaders",
   "dependencies": {
     "com.unity.shadergraph": "7.7.1"
