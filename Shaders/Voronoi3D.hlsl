@@ -16,11 +16,11 @@ float2 vnoise(float3 UV, float AngleOffset, float CellDensity)
     float3 f = frac(UV * CellDensity);
     float3 res = float3(8.0, 8.0, 8.0);
 
-    for (int y = -1; y <= 1; y++)
+    UNITY_UNROLL for (int y = -1; y <= 1; y++)
     {
-        for (int x = -1; x <= 1; x++)
+        UNITY_UNROLL for (int x = -1; x <= 1; x++)
         {
-            for (int z = -1; z <= 1; z++)
+            UNITY_UNROLL for (int z = -1; z <= 1; z++)
             {
                 float3 lattice = float3(x, y, z);
                 float3 offset = VoronoiVector(g + lattice, AngleOffset);
