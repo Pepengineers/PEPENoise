@@ -40,7 +40,7 @@ float2 vnoise(float3 UV, float AngleOffset, float CellDensity)
             }
         }
     }
-    return res;
+    return res.xy;
 }
 
 void Voronoi3D_float(float3 UV, float AngleOffset, float CellDensity, out float Out, out float Cells)
