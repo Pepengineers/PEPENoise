@@ -20,8 +20,8 @@
 //               https://github.com/ashima/webgl-noise
 //
 
-#ifndef _INCLUDE_SIMPLEXNOISE2D_HLSL_
-#define _INCLUDE_SIMPLEXNOISE2D_HLSL_
+#ifndef PEPENOISE_SIMPLEX3D_INCLUDED
+#define PEPENOISE_SIMPLEX3D_INCLUDED
 
 
 #include "NoiseCommon.hlsl"
@@ -48,9 +48,9 @@ float snoise(float3 v)
     float3 x3 = x0 - 0.5;
 
     // Permutations
-    i = mod289(i); // Avoid truncation effects in permutation
+    i = PEPENoiseMod289(i); // Avoid truncation effects in permutation
     float4 p =
-        permute(permute(permute(i.z + float4(0.0, i1.z, i2.z, 1.0))
+        PEPENoisePermute(PEPENoisePermute(PEPENoisePermute(i.z + float4(0.0, i1.z, i2.z, 1.0))
                 + i.y + float4(0.0, i1.y, i2.y, 1.0))
             + i.x + float4(0.0, i1.x, i2.x, 1.0));
 
@@ -84,19 +84,16 @@ float snoise(float3 v)
     float3 g3 = float3(a1.zw, h.w);
 
     // Normalise gradients
-    float4 norm = taylorInvSqrt(float4(dot(g0, g0), dot(g1, g1), dot(g2, g2), dot(g3, g3)));
-    g0 *= norm.x;
-    g1 *= norm.y;
-    g2 *= norm.z;
-    g3 *= norm.w;
+    float4 norm = PEPENoiseTaylorInvSqrt(float4(dot(g0, g0), dot(g1, g1), dot(g2, g2), dot(g3, g3)));
 
     // Mix final noise value
-    float4 m = max(0.6 - float4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+    // Radius squared 0.5 makes discarded corners vanish at simplex boundaries.
+    float4 m = max(0.5 - float4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
     m = m * m;
     m = m * m;
 
     float4 px = float4(dot(x0, g0), dot(x1, g1), dot(x2, g2), dot(x3, g3));
-    return 42.0 * dot(m, px);
+    return 105.0 * dot(m * norm, px);
 }
 
 float4 snoise_grad(float3 v)
@@ -121,9 +118,9 @@ float4 snoise_grad(float3 v)
     float3 x3 = x0 - 0.5;
 
     // Permutations
-    i = mod289(i); // Avoid truncation effects in permutation
+    i = PEPENoiseMod289(i); // Avoid truncation effects in permutation
     float4 p =
-        permute(permute(permute(i.z + float4(0.0, i1.z, i2.z, 1.0))
+        PEPENoisePermute(PEPENoisePermute(PEPENoisePermute(i.z + float4(0.0, i1.z, i2.z, 1.0))
                 + i.y + float4(0.0, i1.y, i2.y, 1.0))
             + i.x + float4(0.0, i1.x, i2.x, 1.0));
 
@@ -157,24 +154,25 @@ float4 snoise_grad(float3 v)
     float3 g3 = float3(a1.zw, h.w);
 
     // Normalise gradients
-    float4 norm = taylorInvSqrt(float4(dot(g0, g0), dot(g1, g1), dot(g2, g2), dot(g3, g3)));
+    float4 norm = PEPENoiseTaylorInvSqrt(float4(dot(g0, g0), dot(g1, g1), dot(g2, g2), dot(g3, g3)));
     g0 *= norm.x;
     g1 *= norm.y;
     g2 *= norm.z;
     g3 *= norm.w;
 
     // Compute noise and gradient at P
-    float4 m = max(0.6 - float4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+    float4 m = max(0.5 - float4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
     float4 m2 = m * m;
     float4 m3 = m2 * m;
     float4 m4 = m2 * m2;
-    float3 grad =
-        -6.0 * m3.x * x0 * dot(x0, g0) + m4.x * g0 +
-        -6.0 * m3.y * x1 * dot(x1, g1) + m4.y * g1 +
-        -6.0 * m3.z * x2 * dot(x2, g2) + m4.z * g2 +
-        -6.0 * m3.w * x3 * dot(x3, g3) + m4.w * g3;
     float4 px = float4(dot(x0, g0), dot(x1, g1), dot(x2, g2), dot(x3, g3));
-    return 42.0 * float4(grad, dot(m4, px));
+    float4 temp = -8.0 * m3 * px;
+    float3 grad =
+        mad(temp.x, x0, m4.x * g0) +
+        mad(temp.y, x1, m4.y * g1) +
+        mad(temp.z, x2, m4.z * g2) +
+        mad(temp.w, x3, m4.w * g3);
+    return 105.0 * float4(grad, dot(m4, px));
 }
 
 void SimplexNoise3D_float(float3 input, out float Out)
@@ -185,6 +183,16 @@ void SimplexNoise3D_float(float3 input, out float Out)
 void SimplexNoise3DGradient_float(float3 input, out float4 Out)
 {
     Out = snoise_grad(input);
+}
+
+void SimplexNoise3D_half(half3 input, out half Out)
+{
+    Out = (half)(snoise((float3)input) * 0.5f + 0.5f);
+}
+
+void SimplexNoise3DGradient_half(half3 input, out half4 Out)
+{
+    Out = (half4)snoise_grad((float3)input);
 }
 
 #endif

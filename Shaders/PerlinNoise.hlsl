@@ -23,8 +23,8 @@
 // https://github.com/ashima/webgl-noise
 //
 
-#ifndef _INCLUDE_PERLINNOISE2D_HLSL_
-#define _INCLUDE_PERLINNOISE2D_HLSL_
+#ifndef PEPENOISE_PERLIN_INCLUDED
+#define PEPENOISE_PERLIN_INCLUDED
 
 
 #include "NoiseCommon.hlsl"
@@ -34,14 +34,14 @@ float pnoise(float2 P)
 {
     float4 Pi = floor(P.xyxy) + float4(0.0, 0.0, 1.0, 1.0);
     float4 Pf = frac(P.xyxy) - float4(0.0, 0.0, 1.0, 1.0);
-    Pi = mod289(Pi); // To avoid truncation effects in permutation
+    Pi = PEPENoiseMod289(Pi); // To avoid truncation effects in permutation
     float4 ix = Pi.xzxz;
     float4 iy = Pi.yyww;
     float4 fx = Pf.xzxz;
     float4 fy = Pf.yyww;
 
 
-    float4 i = permute(permute(ix) + iy);
+    float4 i = PEPENoisePermute(PEPENoisePermute(ix) + iy);
 
     float4 gx = frac(i / 41.0) * 2.0 - 1.0;
     float4 gy = abs(gx) - 0.5;
@@ -53,7 +53,7 @@ float pnoise(float2 P)
     float2 g01 = float2(gx.z, gy.z);
     float2 g11 = float2(gx.w, gy.w);
 
-    float4 norm = taylorInvSqrt(float4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11)));
+    float4 norm = PEPENoiseTaylorInvSqrt(float4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11)));
     g00 *= norm.x;
     g01 *= norm.y;
     g10 *= norm.z;
@@ -64,7 +64,7 @@ float pnoise(float2 P)
     float n01 = dot(g01, float2(fx.z, fy.z));
     float n11 = dot(g11, float2(fx.w, fy.w));
 
-    float2 fade_xy = fade(Pf.xy);
+    float2 fade_xy = PEPENoiseFade(Pf.xy);
     float2 n_x = lerp(float2(n00, n01), float2(n10, n11), fade_xy.x);
     float n_xy = lerp(n_x.x, n_x.y, fade_xy.y);
     return 2.3 * n_xy;
@@ -74,8 +74,8 @@ float pnoise(float3 P)
 {
     float3 Pi0 = floor(P); // Integer part for indexing
     float3 Pi1 = Pi0 + (float3)1.0; // Integer part + 1
-    Pi0 = mod289(Pi0);
-    Pi1 = mod289(Pi1);
+    Pi0 = PEPENoiseMod289(Pi0);
+    Pi1 = PEPENoiseMod289(Pi1);
     float3 Pf0 = frac(P); // Fractional part for interpolation
     float3 Pf1 = Pf0 - (float3)1.0; // Fractional part - 1.0
     float4 ix = float4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
@@ -83,9 +83,9 @@ float pnoise(float3 P)
     float4 iz0 = Pi0.z;
     float4 iz1 = Pi1.z;
 
-    float4 ixy = permute(permute(ix) + iy);
-    float4 ixy0 = permute(ixy + iz0);
-    float4 ixy1 = permute(ixy + iz1);
+    float4 ixy = PEPENoisePermute(PEPENoisePermute(ix) + iy);
+    float4 ixy0 = PEPENoisePermute(ixy + iz0);
+    float4 ixy1 = PEPENoisePermute(ixy + iz1);
 
     float4 gx0 = ixy0 / 7.0;
     float4 gy0 = frac(floor(gx0) / 7.0) - 0.5;
@@ -112,28 +112,18 @@ float pnoise(float3 P)
     float3 g011 = float3(gx1.z, gy1.z, gz1.z);
     float3 g111 = float3(gx1.w, gy1.w, gz1.w);
 
-    float4 norm0 = taylorInvSqrt(float4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
-    g000 *= norm0.x;
-    g010 *= norm0.y;
-    g100 *= norm0.z;
-    g110 *= norm0.w;
+    float4 norm0 = PEPENoiseTaylorInvSqrt(float4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));
+    float4 norm1 = PEPENoiseTaylorInvSqrt(float4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
+    float n000 = norm0.x * dot(g000, Pf0);
+    float n100 = norm0.z * dot(g100, float3(Pf1.x, Pf0.y, Pf0.z));
+    float n010 = norm0.y * dot(g010, float3(Pf0.x, Pf1.y, Pf0.z));
+    float n110 = norm0.w * dot(g110, float3(Pf1.x, Pf1.y, Pf0.z));
+    float n001 = norm1.x * dot(g001, float3(Pf0.x, Pf0.y, Pf1.z));
+    float n101 = norm1.z * dot(g101, float3(Pf1.x, Pf0.y, Pf1.z));
+    float n011 = norm1.y * dot(g011, float3(Pf0.x, Pf1.y, Pf1.z));
+    float n111 = norm1.w * dot(g111, Pf1);
 
-    float4 norm1 = taylorInvSqrt(float4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));
-    g001 *= norm1.x;
-    g011 *= norm1.y;
-    g101 *= norm1.z;
-    g111 *= norm1.w;
-
-    float n000 = dot(g000, Pf0);
-    float n100 = dot(g100, float3(Pf1.x, Pf0.y, Pf0.z));
-    float n010 = dot(g010, float3(Pf0.x, Pf1.y, Pf0.z));
-    float n110 = dot(g110, float3(Pf1.x, Pf1.y, Pf0.z));
-    float n001 = dot(g001, float3(Pf0.x, Pf0.y, Pf1.z));
-    float n101 = dot(g101, float3(Pf1.x, Pf0.y, Pf1.z));
-    float n011 = dot(g011, float3(Pf0.x, Pf1.y, Pf1.z));
-    float n111 = dot(g111, Pf1);
-
-    float3 fade_xyz = fade(Pf0);
+    float3 fade_xyz = PEPENoiseFade(Pf0);
     float4 n_z = lerp(float4(n000, n100, n010, n110), float4(n001, n101, n011, n111), fade_xyz.z);
     float2 n_yz = lerp(n_z.xy, n_z.zw, fade_xyz.y);
     float n_xyz = lerp(n_yz.x, n_yz.y, fade_xyz.x);
@@ -148,6 +138,16 @@ void PerlinNoise2D_float(float2 input, out float Out)
 void PerlinNoise3D_float(float3 input, out float Out)
 {
     Out = pnoise(input) * 0.5f + 0.5f;
+}
+
+void PerlinNoise2D_half(half2 input, out half Out)
+{
+    Out = (half)(pnoise((float2)input) * 0.5f + 0.5f);
+}
+
+void PerlinNoise3D_half(half3 input, out half Out)
+{
+    Out = (half)(pnoise((float3)input) * 0.5f + 0.5f);
 }
 
 #endif

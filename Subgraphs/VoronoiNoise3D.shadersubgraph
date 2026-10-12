@@ -259,7 +259,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector3MaterialSlot",
     "m_ObjectId": "3a4d0f3f7961433ca974e188ff3c1f51",
     "m_Id": 0,
-    "m_DisplayName": "Postion",
+    "m_DisplayName": "Position",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -417,11 +417,11 @@
     "m_Guid": {
         "m_GuidSerialized": "487afc6d-a0a9-4754-a485-89a9bec72e90"
     },
-    "m_Name": "Postion",
+    "m_Name": "Position",
     "m_DefaultRefNameVersion": 1,
-    "m_RefNameGeneratedByDisplayName": "Postion",
+    "m_RefNameGeneratedByDisplayName": "Position",
     "m_DefaultReferenceName": "_Postion",
-    "m_OverrideReferenceName": "",
+    "m_OverrideReferenceName": "_Postion",
     "m_GeneratePropertyBlock": true,
     "m_UseCustomSlotLabel": false,
     "m_CustomSlotLabel": "",
@@ -521,6 +521,7 @@
     "m_SourceType": 0,
     "m_FunctionName": "Voronoi3D",
     "m_FunctionSource": "348608545dea22a40a7450207a7c2438",
+    "m_FunctionSourceUsePragmas": true,
     "m_FunctionBody": "Enter function body here..."
 }
 
